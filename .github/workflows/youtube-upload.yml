@@ -34,14 +34,14 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: python -c "import processor; processor.workflow()"
 
-      - name: Commit and push changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m "🤖 Update files after workflow run"
-            git push
-          else
-            echo "No changes to commit"
-          fi
+      # - name: Commit and push changes
+      #   run: |
+      #     git config --global user.name "github-actions[bot]"
+      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      #     git add -A
+      #     if ! git diff --cached --quiet; then
+      #       git commit -m "🤖 Update files after workflow run"
+      #       git push
+      #     else
+      #       echo "No changes to commit"
+      #     fi

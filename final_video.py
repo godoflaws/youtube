@@ -1,5 +1,8 @@
 import os
 import json
+import gdrive_utils
+from io import BytesIO
+from gdrive_utils import upload_bytes_to_drive 
 from moviepy.editor import (
     VideoFileClip,
     TextClip,
@@ -12,7 +15,7 @@ from moviepy.video.tools.segmenting import findObjects
 from gtts import gTTS
 from pydub import AudioSegment
 from io import BytesIO
-from constants import BASE_TIME, READING_SPEED, PAUSE_TIME, QUOTES_DIR, AUDIO_DIR, BCG_VIDEO_DIR, VIDEO_DIR
+from constants import BASE_TIME, READING_SPEED, PAUSE_TIME, QUOTES_DIR, QUOTES_ID, AUDIO_DIR, BCG_VIDEO_DIR, BCG_VIDEO_ID, VIDEO_DIR, VIDEO_ID
 from moviepy.video.fx.all import fadein, fadeout
 from PIL import Image
 import asyncio
@@ -176,8 +179,31 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
 
     # Export
     final.write_videofile(output_path, fps=30, codec="libx264", audio_codec="aac")
+    
+    file_id = gdrive_utils.upload_file(
+        f"{set_name}.mp4",
+        VIDEO_ID,
+        output_path,
+        mimetype="video/mp4"
+    )
 
 def create_final_video():
+    # Download all JSON files from the Drive folder
+    files = gdrive_utils.list_files(QUOTES_ID)
+    for f in files:
+        if f["name"].endswith(".json"):
+            set_name = f["name"].rsplit(".", 1)[0]  # remove the .json extension
+            quotes_file_id = f["id"]
+            gdrive_utils.download_file(quotes_file_id, f"{QUOTES_DIR}/{set_name}.json")
+
+    # Download all bcg mp4 files from the Drive folder
+    files = gdrive_utils.list_files(BCG_VIDEO_ID)
+    for f in files:
+        if f["name"].endswith(".mp4"):
+            set_name = f["name"].rsplit(".", 1)[0]  # remove the .mp4 extension
+            bcg_video_file_id = f["id"]
+            gdrive_utils.download_file(bcg_video_file_id, f"{BCG_VIDEO_DIR}/{set_name}.mp4")
+
     for set_file in os.listdir(QUOTES_DIR):
         if set_file.endswith(".json"):
             set_name = os.path.splitext(set_file)[0]

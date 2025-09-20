@@ -1,10 +1,11 @@
 import os
 import random
 import time
+from gdrive_utils import delete_file_by_name
 from final_video import create_final_video
 from pexels_video import fetch_and_save_videos
 from zenquotes import fetch_and_save_quotes
-from constants import QUOTES_DIR, AUDIO_DIR, BCG_VIDEO_DIR, VIDEO_DIR, youtube_descriptions, youtube_tags, youtube_titles
+from constants import QUOTES_ID, AUDIO_ID, BCG_VIDEO_ID, VIDEO_DIR, VIDEO_ID, youtube_descriptions, youtube_tags, youtube_titles
 from youtube_upload import upload_video
 
 def create_mp4_files():
@@ -25,24 +26,18 @@ def process_mp4(file_path):
     )
 
 def cleanup_files(base_name):
-     # Construct associated file paths
-     related_files = [
-        os.path.join(VIDEO_DIR, base_name + ".mp4"),   # Final video
-        os.path.join(BCG_VIDEO_DIR, base_name + ".mp4"),   # Background video
-        os.path.join(AUDIO_DIR, base_name + ".mp3"), # Audio file
-        os.path.join(QUOTES_DIR, base_name + ".json"), # Quote file
-     ]
-
-     # Delete each associated file if it exists
-     for path in related_files:
-        if os.path.exists(path):
-            os.remove(path)
-            print(f"Deleted: {path}")
-        else:
-            print(f"Not found: {path}")
+     delete_file_by_name(base_name + ".mp4", VIDEO_ID)
+     delete_file_by_name(base_name + ".mp4", BCG_VIDEO_ID)
+     delete_file_by_name(base_name + ".json", QUOTES_ID)
 
 def workflow():
-    os.makedirs(VIDEO_DIR, exist_ok=True)
+    # Download all mp4 files from the Drive folder
+    files = gdrive_utils.list_files(VIDEO_ID)
+    for f in files:
+        if f["name"].endswith(".mp4"):
+            set_name = f["name"].rsplit(".", 1)[0]  # remove the .mp4 extension
+            video_file_id = f["id"]
+            gdrive_utils.download_file(video_file_id, f"{VIDEO_DIR}/{set_name}.mp4")
     mp4_files = [f for f in os.listdir(VIDEO_DIR) if f.endswith(".mp4")]
 
     if not mp4_files:

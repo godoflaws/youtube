@@ -1,7 +1,11 @@
 QUOTES_DIR = "quote_sets"
+QUOTES_ID = "1pl2cVIz95791tyYJpo4m9RZ_fyMmJeJ9"
 AUDIO_DIR = "audio_sets"
+# AUDIO_ID = "1hwa7M4TWUbrCtAqB3XqRUIOc3vadq7iG"
 BCG_VIDEO_DIR = "bcg_videos"
+BCG_VIDEO_ID = "1tnWl3oKl5BtGr_YffkyrichK7Ats346s"
 VIDEO_DIR = "final_videos"
+VIDEO_ID = "12bCbuDb03LB-9AhOCPATQuT-s1zIDhRu"
 BASE_TIME = 0         # min seconds per quote
 READING_SPEED = 15    # characters per second
 PAUSE_TIME = 2        # pause after each quote

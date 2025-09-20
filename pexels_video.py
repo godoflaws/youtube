@@ -1,7 +1,8 @@
 import os
 import requests
 import random
-from constants import QUOTES_DIR, BCG_VIDEO_DIR, PEXEL_KEYWORDS
+import gdrive_utils
+from constants import QUOTES_DIR, BCG_VIDEO_ID, PEXEL_KEYWORDS
 
 # Constants
 PEXEL_KEY = "y5p47lBGl0Xk2k8jMN4L2XfDbGzW1Yzxem1ZEnx0eDvK1eZ1FMzEJW14"
@@ -11,8 +12,6 @@ PEXELS_URL = "https://api.pexels.com/videos/search"
 HEADERS = {
     "Authorization": PEXEL_KEY
 }
-
-os.makedirs(BCG_VIDEO_DIR, exist_ok=True)
 
 def fetch_and_save_videos():
 
@@ -46,10 +45,9 @@ def fetch_and_save_videos():
 
                 video_response = requests.get(video_url)
                 if video_response.status_code == 200:
-                    output_path = os.path.join(BCG_VIDEO_DIR, f"{set_name}.mp4")
-                    with open(output_path, "wb") as f:
-                        f.write(video_response.content)
-                    print(f"✅ Saved to: {output_path}")
+                    output_file_name = f"{set_name}.mp4"
+                    file_id = gdrive_utils.upload_file(output_file_name, video_response.content, BCG_VIDEO_ID)
+                    print(f"✅ Uploaded to Google Drive with File ID: {file_id}")
                 else:
                     print(f"❌ Failed to download video: {video_response.status_code}")
             else:
