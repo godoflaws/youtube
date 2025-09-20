@@ -10,12 +10,12 @@ SCOPES = [
 
 # Load credentials from environment variables
 creds = Credentials(
-    token=None,
+    None,  # No access token needed; will be fetched automatically
     refresh_token=os.getenv("GOOGLE_REFRESH_TOKEN"),
+    token_uri="https://oauth2.googleapis.com/token",
     client_id=os.getenv("YOUTUBE_CLIENT_ID"),
     client_secret=os.getenv("YOUTUBE_CLIENT_SECRET"),
-    token_uri="https://oauth2.googleapis.com/token",
-    scopes=SCOPES,
+    scopes=SCOPES
 )
 
 drive_service = build("drive", "v3", credentials=creds)
