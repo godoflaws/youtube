@@ -1,16 +1,27 @@
-import os
-from io import BytesIO
-from google.oauth2.credentials import Credentials
+import io
+from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 
-SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+# Path to your service account JSON key file
+SERVICE_ACCOUNT_FILE = "service_account.json"
 
-def upload_bytes_to_drive(filename, file_bytes, folder_id, service):
-    media = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype="application/octet-stream")
+# Scopes required to read/write files in Drive
+SCOPES = ["https://www.googleapis.com/auth/drive"]
+
+# Initialize Drive service
+credentials = service_account.Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES
+)
+drive_service = build("drive", "v3", credentials=credentials)
+
+
+def upload_bytes_to_drive(filename: str, file_bytes: bytes, folder_id: str, mimetype="application/octet-stream") -> str:
+    """Upload a file to Google Drive from bytes."""
+    media = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype=mimetype)
     file_metadata = {"name": filename, "parents": [folder_id]}
     
-    uploaded = service.files().create(
+    uploaded = drive_service.files().create(
         body=file_metadata,
         media_body=media,
         fields="id"
@@ -20,34 +31,18 @@ def upload_bytes_to_drive(filename, file_bytes, folder_id, service):
     return uploaded.get("id")
 
 
-def get_drive_service():
-    creds = Credentials(
-        None,
-        refresh_token=os.getenv("DRIVE_REFRESH_TOKEN"),
-        token_uri="https://oauth2.googleapis.com/token",
-        client_id=os.getenv("YOUTUBE_CLIENT_ID"),
-        client_secret=os.getenv("YOUTUBE_CLIENT_SECRET"),
-        scopes=SCOPES,
-    )
-    return build("drive", "v3", credentials=creds)
-
-drive_service = get_drive_service()
-
-
-def upload_file(file_name: str, file_bytes: bytes, folder_id: str) -> str:
-    """Upload a file to Google Drive from bytes. Returns file ID."""
-    file_metadata = {"name": file_name, "parents": [folder_id]}
-    media = MediaIoBaseUpload(BytesIO(file_bytes), mimetype="video/mp4")
-    uploaded_file = drive_service.files().create(
-        body=file_metadata, media_body=media, fields="id"
-    ).execute()
-    return uploaded_file["id"]
+def upload_file_from_path(file_path: str, folder_id: str, mimetype="application/octet-stream") -> str:
+    """Upload a local file to Google Drive."""
+    filename = file_path.split("/")[-1]
+    with open(file_path, "rb") as f:
+        file_bytes = f.read()
+    return upload_bytes_to_drive(filename, file_bytes, folder_id, mimetype)
 
 
 def list_files(folder_id: str):
     """List all files in a folder."""
     results = drive_service.files().list(
-        q=f"'{folder_id}' in parents",
+        q=f"'{folder_id}' in parents and trashed = false",
         fields="files(id, name)"
     ).execute()
     return results.get("files", [])
@@ -67,21 +62,19 @@ def delete_file(file_id: str):
     """Delete a file from Google Drive."""
     drive_service.files().delete(fileId=file_id).execute()
 
-def delete_file_by_name(filename: str, folder_id: str):
-    query = f"'{folder_id}' in parents and name = '{filename}' and trashed = false"
-    results = drive_service.files().list(
-        q=query, fields="files(id, name)"
-    ).execute()
 
+def delete_file_by_name(filename: str, folder_id: str):
+    """Delete all files with a given name inside a specific folder."""
+    query = f"'{folder_id}' in parents and name = '{filename}' and trashed = false"
+    results = drive_service.files().list(q=query, fields="files(id, name)").execute()
     files = results.get("files", [])
     if not files:
-        print(f"⚠️ No file named {filename} found.")
+        print(f"⚠️ No file named {filename} found in folder {folder_id}")
         return
     
-    # Delete all matching files (in case there are multiple with same name)
     for f in files:
         try:
             delete_file(f["id"])
-            print(f"🗑️ Deleted {f['name']} (ID={f['id']})")
+            print(f"🗑️ Deleted {f['name']} (ID={f['id']}) from folder {folder_id}")
         except Exception as e:
-            print(f"❌ Could not delete {f['name']}: {e}")
+            print(f"❌ Could not delete {f['name']} from folder {folder_id}: {e}")
