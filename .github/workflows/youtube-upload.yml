@@ -28,7 +28,8 @@ jobs:
   
       - name: Write service account key
         run: |
-          printf '%s' "${{ secrets.GDRIVE_SERVICE_ACCOUNT }}" > service_account.json
+          echo "${{ secrets.GDRIVE_SERVICE_ACCOUNT_B64 }}" | base64 --decode > service_account.json
+    
 
       
       - name: Run processor workflow
