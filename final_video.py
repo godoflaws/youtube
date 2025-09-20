@@ -191,7 +191,7 @@ def create_final_video():
                 continue
 
             print(f"🎬 Creating video for {set_file}...")
-            # create_video_for_set(set_name, quotes_path, audio_path, video_path, output_path)
+            create_video_for_set(set_name, quotes_path, audio_path, video_path, output_path)
 
     print("✅ All videos created with narration!")
 
