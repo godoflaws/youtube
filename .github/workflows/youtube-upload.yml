@@ -27,7 +27,9 @@ jobs:
           python -m pip install --no-cache-dir -r requirements.txt
   
       - name: Write service account key
-        run: echo "${{ secrets.GDRIVE_SERVICE_ACCOUNT }}" > service_account.json
+        run: |
+          printf '%s' "${{ secrets.GDRIVE_SERVICE_ACCOUNT }}" > service_account.json
+
       
       - name: Run processor workflow
         env:
