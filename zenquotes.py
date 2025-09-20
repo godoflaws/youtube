@@ -24,6 +24,11 @@ def fetch_and_save_quotes():
             for q in quote_set
         ]
 
+        # save each set into its own JSON file
+        filename = f"quote_sets/set_{idx}.json"
+        with open(filename, "w") as f:
+            json.dump(formatted_set, f, indent=4)
+
         # Save each set into its own JSON file in Google Drive
         filename = f"set_{idx}.json"
         json_bytes = json.dumps(formatted_set, indent=4).encode("utf-8")  # convert JSON to bytes
