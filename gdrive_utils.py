@@ -4,12 +4,14 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 
-SCOPES = ["https://www.googleapis.com/auth/drive"]
+SCOPES = [
+    "https://www.googleapis.com/auth/drive"
+]
 
 # Load credentials from environment variables
 creds = Credentials(
     token=None,
-    refresh_token=os.getenv("GOOGLE_DRIVE_REFRESH_TOKEN"),
+    refresh_token=os.getenv("GOOGLE_REFRESH_TOKEN"),
     client_id=os.getenv("YOUTUBE_CLIENT_ID"),
     client_secret=os.getenv("YOUTUBE_CLIENT_SECRET"),
     token_uri="https://oauth2.googleapis.com/token",
