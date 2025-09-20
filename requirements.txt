@@ -5,3 +5,4 @@ google-auth-httplib2
 moviepy
 requests
 Pillow
+python-dotenv
