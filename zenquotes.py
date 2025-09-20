@@ -28,7 +28,12 @@ def fetch_and_save_quotes():
         filename = f"set_{idx}.json"
         json_bytes = json.dumps(formatted_set, indent=4).encode("utf-8")  # convert JSON to bytes
 
-        file_id = gdrive_utils.upload_file_from_path(filename, json_bytes, QUOTES_ID)
+        file_id = gdrive_utils.upload_bytes_to_drive(
+            filename,        # e.g., "set_1.json"
+            json_bytes,      # the actual bytes content
+            QUOTES_ID,       # folder ID
+            mimetype="application/json"
+        )
         print(f"✅ Saved {filename} to Google Drive with File ID: {file_id}")
 
 # fetch_and_save_quotes()
