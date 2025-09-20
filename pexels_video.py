@@ -46,8 +46,14 @@ def fetch_and_save_videos():
                 video_response = requests.get(video_url)
                 if video_response.status_code == 200:
                     output_file_name = f"{set_name}.mp4"
-                    file_id = gdrive_utils.upload_file(output_file_name, video_response.content, BCG_VIDEO_ID)
-                    print(f"✅ Uploaded to Google Drive with File ID: {file_id}")
+                    # Upload the video bytes to Google Drive
+                    file_id = gdrive_utils.upload_bytes_to_drive(
+                        filename=output_file_name,
+                        file_bytes=video_response.content,
+                        folder_id=BCG_VIDEO_ID,
+                        mimetype="video/mp4"  # specify correct MIME type for videos
+                    )
+                    print(f"✅ Uploaded {output_file_name} to Drive with file ID: {file_id}")
                 else:
                     print(f"❌ Failed to download video: {video_response.status_code}")
             else:
