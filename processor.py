@@ -1,11 +1,11 @@
 import os
 import random
 import time
-from gdrive_utils import delete_file_by_name
+from gdrive_utils import delete_file_by_name, list_files, download_file
 from final_video import create_final_video
 from pexels_video import fetch_and_save_videos
 from zenquotes import fetch_and_save_quotes
-from constants import QUOTES_ID, AUDIO_ID, BCG_VIDEO_ID, VIDEO_DIR, VIDEO_ID, youtube_descriptions, youtube_tags, youtube_titles
+from constants import QUOTES_ID, BCG_VIDEO_ID, VIDEO_DIR, VIDEO_ID, youtube_descriptions, youtube_tags, youtube_titles
 from youtube_upload import upload_video
 
 def create_mp4_files():
@@ -32,12 +32,12 @@ def cleanup_files(base_name):
 
 def workflow():
     # Download all mp4 files from the Drive folder
-    files = gdrive_utils.list_files(VIDEO_ID)
+    files = list_files(VIDEO_ID)
     for f in files:
         if f["name"].endswith(".mp4"):
             set_name = f["name"].rsplit(".", 1)[0]  # remove the .mp4 extension
             video_file_id = f["id"]
-            gdrive_utils.download_file(video_file_id, f"{VIDEO_DIR}/{set_name}.mp4")
+            download_file(video_file_id, f"{VIDEO_DIR}/{set_name}.mp4")
     mp4_files = [f for f in os.listdir(VIDEO_DIR) if f.endswith(".mp4")]
 
     if not mp4_files:
