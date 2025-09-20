@@ -23,7 +23,7 @@ def upload_bytes_to_drive(filename, file_bytes, folder_id, service):
 def get_drive_service():
     creds = Credentials(
         None,
-        refresh_token=os.getenv("YOUTUBE_REFRESH_TOKEN"),
+        refresh_token=os.getenv("DRIVE_REFRESH_TOKEN"),
         token_uri="https://oauth2.googleapis.com/token",
         client_id=os.getenv("YOUTUBE_CLIENT_ID"),
         client_secret=os.getenv("YOUTUBE_CLIENT_SECRET"),
