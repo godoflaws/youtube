@@ -211,11 +211,6 @@ def create_final_video():
             audio_path = os.path.join(AUDIO_DIR, f"{set_name}.mp3")
             video_path = os.path.join(BCG_VIDEO_DIR, f"{set_name}.mp4")
             output_path = os.path.join(VIDEO_DIR, f"{set_name}.mp4")
-
-            if not os.path.exists(audio_path):
-                print(f"⚠️ Skipping {set_name}: No audio file found at {audio_path}")
-                continue
-
             print(f"🎬 Creating video for {set_file}...")
             create_video_for_set(set_name, quotes_path, audio_path, video_path, output_path)
 
