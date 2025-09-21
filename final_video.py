@@ -131,7 +131,7 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
         quotes = json.load(f)
 
     # Load English voices
-    with open(voices_path, "r", encoding="utf-8") as f:
+    with open("voices.json", "r", encoding="utf-8") as f:
         voices = json.load(f)["english"]
     random_voice = random.choice(voices)
     tts = TTS(model_name=random_voice)
