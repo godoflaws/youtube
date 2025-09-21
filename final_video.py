@@ -27,7 +27,7 @@ if not hasattr(Image, 'ANTIALIAS'):
 
 os.makedirs(VIDEO_DIR, exist_ok=True)
 
-def synthesize_to_tempfile(tts: TTS, text: str, speaker: str = None, suffix=".mp3") -> str:
+def synthesize_to_tempfile(tts: TTS, text: str, speaker: str = None, suffix=".wav") -> str:
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp.close()
     try:
@@ -162,10 +162,10 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
         combined_text = f"“{quote}”\n\n— {author}"
 
         # Generate TTS for a quote
-        mp3_path = synthesize_to_tempfile(tts, quote, speaker=speaker_name)
+        wav_path = synthesize_to_tempfile(tts, quote, speaker=speaker_name)
         
         # Load into pydub and append
-        audio = AudioSegment.from_file(mp3_path, format="mp3")
+        audio = AudioSegment.from_file(wav_path, format="wav")
         final_audio += audio + pause
 
         txt_with_box = typewriter_static_layout_clip(
@@ -174,7 +174,7 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
         text_clips.append(txt_with_box)
 
     # Export final audio file
-    final_audio.export(audio_path, format="mp3")
+    final_audio.export(audio_path, format="wav")
 
     # Load narration audio
     narration = AudioFileClip(audio_path)
@@ -227,7 +227,7 @@ def create_final_video():
         if set_file.endswith(".json"):
             set_name = os.path.splitext(set_file)[0]
             quotes_path = os.path.join(QUOTES_DIR, set_file)
-            audio_path = os.path.join(AUDIO_DIR, f"{set_name}.mp3")
+            audio_path = os.path.join(AUDIO_DIR, f"{set_name}.wav")
             video_path = os.path.join(BCG_VIDEO_DIR, f"{set_name}.mp4")
             output_path = os.path.join(VIDEO_DIR, f"{set_name}.mp4")
             print(f"🎬 Creating video for {set_file}...")
