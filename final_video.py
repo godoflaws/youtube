@@ -220,11 +220,16 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
 
     # Render video to disk
     final.write_videofile(output_path, codec="libx264", audio_codec="aac")
-    
-    file_id = gdrive_utils.upload_file(
-        f"{set_name}.mp4",
-        VIDEO_ID,
-        output_path,
+
+    # Read the MP4 file into bytes
+    with open(output_path, "rb") as f:
+        file_bytes = f.read()
+
+    # Upload
+    file_id = gdrive_utils.upload_bytes_to_drive(
+        filename=f"{set_name}.mp4",
+        file_bytes=file_bytes,
+        folder_id=VIDEO_ID,
         mimetype="video/mp4"
     )
 
