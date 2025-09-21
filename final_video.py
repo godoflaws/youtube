@@ -12,16 +12,14 @@ from moviepy.editor import (
     ColorClip
 )
 from moviepy.video.tools.segmenting import findObjects
-from gtts import gTTS
+from TTS.api import TTS
 from pydub import AudioSegment
 from io import BytesIO
 from constants import BASE_TIME, READING_SPEED, PAUSE_TIME, QUOTES_DIR, QUOTES_ID, AUDIO_DIR, BCG_VIDEO_DIR, BCG_VIDEO_ID, VIDEO_DIR, VIDEO_ID
 from moviepy.video.fx.all import fadein, fadeout
 from PIL import Image
-import asyncio
 import tempfile
-import edge_tts
-import json, random
+import random
 
 # Pillow patch (for compatibility with Pillow>=10)
 if not hasattr(Image, 'ANTIALIAS'):
@@ -29,11 +27,11 @@ if not hasattr(Image, 'ANTIALIAS'):
 
 os.makedirs(VIDEO_DIR, exist_ok=True)
 
-# One-time function definition
-async def synthesize_to_tempfile(text, voice="en-US-AriaNeural"):
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
-    communicate = edge_tts.Communicate(text=text, voice=voice)
-    await communicate.save(tmp.name)
+def synthesize_to_tempfile(text: str, speaker: str = None) -> str:
+    """Generate TTS audio for text and return a temp .wav file path."""
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    tmp.close()
+    tts.tts_to_file(text=text, speaker=speaker, file_path=tmp.name)
     return tmp.name
 
 def calc_duration(quote_text):
@@ -131,12 +129,12 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
     with open(quotes_path, "r", encoding="utf-8") as f:
         quotes = json.load(f)
 
-    # Load voice
-    with open("voices.json", "r", encoding="utf-8") as f:
+    # Load available voices (list of speaker names)
+    with open(voices_path, "r", encoding="utf-8") as f:
         voices = json.load(f)
-    random_voice = random.choice(voices)    
+    random_voice = random.choice(voices)
 
-    pause = AudioSegment.silent(duration=PAUSE_TIME*1000)
+    pause = AudioSegment.silent(duration=PAUSE_TIME * 1000)
     final_audio = AudioSegment.empty()
 
     # Load background video
@@ -146,39 +144,47 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
     # Build text clips with durations
     text_clips = []
     for item in quotes:
-        
-        quote = item['quote']
-        author = item['author']
+        quote = item["quote"]
+        author = item["author"]
         combined_text = f"“{quote}”\n\n— {author}"
 
-        # Run the async function inside sync code
-        mp3_path = asyncio.run(synthesize_to_tempfile(quote, random_voice))
+        # Generate TTS audio using Coqui
+        wav_path = synthesize_to_tempfile(quote, random_voice)
 
         # Load into pydub and append
-        audio = AudioSegment.from_file(mp3_path, format="mp3")
+        audio = AudioSegment.from_file(wav_path, format="wav")
         final_audio += audio + pause
 
-        txt_with_box = typewriter_static_layout_clip(combined_text, (audio + pause).duration_seconds)
+        txt_with_box = typewriter_static_layout_clip(
+            combined_text, (audio + pause).duration_seconds
+        )
         text_clips.append(txt_with_box)
 
     # Export final audio file
     final_audio.export(audio_path, format="mp3")
+
     # Load narration audio
     narration = AudioFileClip(audio_path)
-    # Total duration from text timings
     total_duration = narration.duration
 
     # Sequence of quotes
     quotes_sequence = concatenate_videoclips(text_clips, method="compose")
 
     # Loop background video to match
-    bg_video = base_video.loop(duration=total_duration).subclip(0, total_duration)
+    bg_video = (
+        base_video.loop(duration=total_duration)
+        .subclip(0, total_duration)
+    )
 
     # Composite video + audio
-    final = CompositeVideoClip([bg_video, quotes_sequence]).set_audio(narration).set_duration(total_duration)
+    final = (
+        CompositeVideoClip([bg_video, quotes_sequence])
+        .set_audio(narration)
+        .set_duration(total_duration)
+    )
 
-    # Export
-    final.write_videofile(output_path, fps=30, codec="libx264", audio_codec="aac")
+    # Render video to disk
+    final.write_videofile(output_path, codec="libx264", audio_codec="aac")
     
     file_id = gdrive_utils.upload_file(
         f"{set_name}.mp4",
@@ -205,7 +211,7 @@ def create_final_video():
             gdrive_utils.download_file(bcg_video_file_id, f"{BCG_VIDEO_DIR}/{set_name}.mp4")
 
     for set_file in os.listdir(QUOTES_DIR):
-        if set_file.endswith(".json"):
+        if set_file.endswith("11.json"):
             set_name = os.path.splitext(set_file)[0]
             quotes_path = os.path.join(QUOTES_DIR, set_file)
             audio_path = os.path.join(AUDIO_DIR, f"{set_name}.mp3")
@@ -215,5 +221,4 @@ def create_final_video():
             create_video_for_set(set_name, quotes_path, audio_path, video_path, output_path)
 
     print("✅ All videos created with narration!")
-
 # create_final_video()
