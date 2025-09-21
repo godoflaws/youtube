@@ -137,17 +137,14 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
     with open(quotes_path, "r", encoding="utf-8") as f:
         quotes = json.load(f)
 
-    # Load voices.json
     with open("voices.json", "r", encoding="utf-8") as f:
         voices_data = json.load(f)["english"]
 
-    # Pick a random model (there’s only "en_vctk" for now)
-    tts_model_name = random.choice(list(voices_data.keys()))
+    # Pick model + speaker
+    tts_model_name, speaker_list = random.choice(list(voices_data.items()))
+    speaker_name = random.choice(speaker_list)
 
-    # Pick a random speaker from that model
-    speaker_name = random.choice(voices_data[tts_model_name])
-
-    # Initialize TTS
+    # Load TTS model
     tts = TTS(model_name=tts_model_name)
 
     pause = AudioSegment.silent(duration=PAUSE_TIME * 1000)
@@ -227,7 +224,7 @@ def create_final_video():
             gdrive_utils.download_file(bcg_video_file_id, f"{BCG_VIDEO_DIR}/{set_name}.mp4")
 
     for set_file in os.listdir(QUOTES_DIR):
-        if set_file.endswith(".json"):
+        if set_file.endswith("11.json"):
             set_name = os.path.splitext(set_file)[0]
             quotes_path = os.path.join(QUOTES_DIR, set_file)
             audio_path = os.path.join(AUDIO_DIR, f"{set_name}.mp3")
