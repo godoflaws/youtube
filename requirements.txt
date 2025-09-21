@@ -8,4 +8,5 @@ Pillow
 python-dotenv
 scipy
 pydub
-TTS
+TTS==0.22.0
+numpy<2
