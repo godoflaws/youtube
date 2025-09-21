@@ -9,7 +9,8 @@ from moviepy.editor import (
     CompositeVideoClip,
     concatenate_videoclips,
     AudioFileClip,
-    ColorClip
+    ColorClip,
+    ImageClip
 )
 from moviepy.video.tools.segmenting import findObjects
 from TTS.api import TTS
@@ -20,6 +21,10 @@ from moviepy.video.fx.all import fadein, fadeout
 from PIL import Image
 import tempfile
 import random
+import textwrap
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+
 
 # Pillow patch (for compatibility with Pillow>=10)
 if not hasattr(Image, 'ANTIALIAS'):
@@ -47,14 +52,29 @@ def calc_duration(quote_text):
     read_time = len(quote_text) / READING_SPEED
     return BASE_TIME + read_time + PAUSE_TIME
 
+def render_word_pillow(word, fontsize, font, color):
+    # Load TTF font (ensure the .ttf file exists on system, e.g. "DejaVuSans-Bold.ttf")
+    font_obj = ImageFont.truetype(font + ".ttf", fontsize)
+
+    # Measure text size
+    dummy_img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(dummy_img)
+    w, h = draw.textsize(word, font=font_obj)
+
+    # Render the word into an image
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    draw.text((0, 0), word, font=font_obj, fill=color)
+
+    # Convert to ImageClip so rest of your code works unchanged
+    clip = ImageClip(np.array(img))
+    return clip, w, h
 
 def typewriter_static_layout_clip(full_text, total_duration,
                                   font="Georgia", fontsize=70,
                                   color="white", max_width=1000,
                                   box_color=(0, 0, 0), box_opacity=0.6,
                                   video_size=(1080, 1920)):
-
-    import textwrap
 
     # Parameters
     margin = 40
@@ -67,7 +87,7 @@ def typewriter_static_layout_clip(full_text, total_duration,
     # 1. Measure each word
     rendered_words = []
     for word in words:
-        clip = TextClip(word, fontsize=fontsize, font=font, color=color, method="caption", use_PIL=True)
+        clip, w, h = render_word_pillow(word, fontsize, font, color)
         rendered_words.append((word, clip.w, clip.h, clip))
 
     # 2. Word wrapping manually
