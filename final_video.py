@@ -31,9 +31,12 @@ def synthesize_to_tempfile(tts: TTS, text: str, speaker: str = None, suffix=".mp
     """Generate TTS audio for text and return a temp file path."""
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp.close()
-    tts.tts_to_file(text=text, speaker=speaker, file_path=tmp.name)
+    # Only pass speaker if the model supports multi-speaker
+    if hasattr(tts, "is_multi_speaker") and tts.is_multi_speaker:
+        tts.tts_to_file(text=text, speaker=speaker, file_path=tmp.name)
+    else:
+        tts.tts_to_file(text=text, file_path=tmp.name)
     return tmp.name
-
 
 def calc_duration(quote_text):
     """Calculate duration based on text length + base + pause."""
