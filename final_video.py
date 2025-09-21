@@ -224,7 +224,7 @@ def create_final_video():
             gdrive_utils.download_file(bcg_video_file_id, f"{BCG_VIDEO_DIR}/{set_name}.mp4")
 
     for set_file in os.listdir(QUOTES_DIR):
-        if set_file.endswith("11.json"):
+        if set_file.endswith(".json"):
             set_name = os.path.splitext(set_file)[0]
             quotes_path = os.path.join(QUOTES_DIR, set_file)
             audio_path = os.path.join(AUDIO_DIR, f"{set_name}.mp3")
