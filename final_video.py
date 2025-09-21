@@ -27,16 +27,13 @@ if not hasattr(Image, 'ANTIALIAS'):
 
 os.makedirs(VIDEO_DIR, exist_ok=True)
 
-def synthesize_to_tempfile(tts: TTS, text: str, speaker: str = None, suffix=".mp3") -> str:
+def synthesize_to_tempfile(tts: TTS, text: str, speaker: str, suffix=".mp3") -> str:
     """Generate TTS audio for text and return a temp file path."""
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp.close()
-    # Only pass speaker if the model supports multi-speaker
-    if hasattr(tts, "is_multi_speaker") and tts.is_multi_speaker:
-        tts.tts_to_file(text=text, speaker=speaker, file_path=tmp.name)
-    else:
-        tts.tts_to_file(text=text, file_path=tmp.name)
+    tts.tts_to_file(text=text, speaker=speaker, file_path=tmp.name)
     return tmp.name
+
 
 def calc_duration(quote_text):
     """Calculate duration based on text length + base + pause."""
@@ -133,11 +130,16 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
     with open(quotes_path, "r", encoding="utf-8") as f:
         quotes = json.load(f)
 
-    # Load English voices
+    # Load voices.json
     with open("voices.json", "r", encoding="utf-8") as f:
-        voices = json.load(f)["english"]
-    random_voice = random.choice(voices)
-    tts = TTS(model_name=random_voice)
+        voices_data = json.load(f)["english"]
+
+    # Single multi-speaker model
+    tts_model_name = "en_vctk"
+    tts = TTS(model_name=tts_model_name)
+
+    # Pick a random speaker for the set
+    speaker_name = random.choice(voices_data[tts_model_name])
 
     pause = AudioSegment.silent(duration=PAUSE_TIME * 1000)
     final_audio = AudioSegment.empty()
@@ -153,8 +155,8 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
         author = item["author"]
         combined_text = f"“{quote}”\n\n— {author}"
 
-        # Generate TTS audio using Coqui
-        mp3_path = synthesize_to_tempfile(tts, quote, speaker=random_voice)
+        # Generate TTS for a quote
+        mp3_path = synthesize_to_tempfile(tts, quote, speaker=speaker_name)
         
         # Load into pydub and append
         audio = AudioSegment.from_file(mp3_path, format="mp3")
