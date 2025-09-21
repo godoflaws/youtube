@@ -2,7 +2,7 @@ import os
 import requests
 import random
 import gdrive_utils
-from constants import QUOTES_DIR, BCG_VIDEO_ID, PEXEL_KEYWORDS
+from constants import QUOTES_DIR, BCG_VIDEO_DIR, BCG_VIDEO_ID, PEXEL_KEYWORDS
 
 # Constants
 PEXEL_KEY = "y5p47lBGl0Xk2k8jMN4L2XfDbGzW1Yzxem1ZEnx0eDvK1eZ1FMzEJW14"
@@ -49,7 +49,7 @@ def fetch_and_save_videos():
                     # Upload the video bytes to Google Drive
                     file_id = gdrive_utils.upload_bytes_to_drive(
                         filename=output_file_name,
-                        file_bytes=video_response.content,
+                        file_path=f"{BCG_VIDEO_DIR}/{set_name}.mp4",
                         folder_id=BCG_VIDEO_ID,
                         mimetype="video/mp4"  # specify correct MIME type for videos
                     )

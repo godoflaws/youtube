@@ -25,20 +25,20 @@ def fetch_and_save_quotes():
         ]
 
         # save each set into its own JSON file
-        filename = f"quote_sets/set_{idx}.json"
-        with open(filename, "w") as f:
+        file_path = f"quote_sets/set_{idx}.json"
+        with open(file_path, "w") as f:
             json.dump(formatted_set, f, indent=4)
 
         # Save each set into its own JSON file in Google Drive
         filename = f"set_{idx}.json"
-        json_bytes = json.dumps(formatted_set, indent=4).encode("utf-8")  # convert JSON to bytes
-
+        
         file_id = gdrive_utils.upload_bytes_to_drive(
-            filename,        # e.g., "set_1.json"
-            json_bytes,      # the actual bytes content
-            QUOTES_ID,       # folder ID
-            mimetype="application/json"
+            filename=filename,
+            file_path=file_path,
+            folder_id=QUOTES_ID,
+            mimetype="application/json",
         )
+
         print(f"✅ Saved {filename} to Google Drive with File ID: {file_id}")
 
 # fetch_and_save_quotes()
