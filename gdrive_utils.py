@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload, MediaFileUpload
 
 SCOPES = [
     "https://www.googleapis.com/auth/drive"
@@ -21,8 +21,11 @@ creds = Credentials(
 drive_service = build("drive", "v3", credentials=creds)
 
 
-def upload_bytes_to_drive(filename: str, file_bytes: bytes, folder_id: str, mimetype="application/octet-stream") -> str:
-    media = MediaIoBaseUpload(BytesIO(file_bytes), mimetype=mimetype)
+def upload_bytes_to_drive(filename: str, file_path: str, folder_id: str, mimetype="application/octet-stream") -> str:
+    """
+    Uploads a file to Google Drive using a file path (streamed), avoiding memory issues.
+    """
+    media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
     file_metadata = {"name": filename, "parents": [folder_id]}
     
     uploaded = drive_service.files().create(
