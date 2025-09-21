@@ -31,7 +31,10 @@ def synthesize_to_tempfile(tts: TTS, text: str, speaker: str, suffix=".mp3") -> 
     """Generate TTS audio for text and return a temp file path."""
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp.close()
+    
+    # Always pass speaker since we are only using multi-speaker models
     tts.tts_to_file(text=text, speaker=speaker, file_path=tmp.name)
+    
     return tmp.name
 
 
@@ -134,12 +137,13 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
     with open("voices.json", "r", encoding="utf-8") as f:
         voices_data = json.load(f)["english"]
 
-    # Single multi-speaker model
-    tts_model_name = "en_vctk"
+    # Pick a random "en_vctk" model (all multi-speaker)
+    tts_model_name = random.choice(voices_data)
     tts = TTS(model_name=tts_model_name)
 
-    # Pick a random speaker for the set
-    speaker_name = random.choice(voices_data[tts_model_name])
+    # Pick a speaker for this set
+    speaker_name = random.choice(range(tts.speakers))  # or voices_data[tts_model_name] if you store speaker names
+
 
     pause = AudioSegment.silent(duration=PAUSE_TIME * 1000)
     final_audio = AudioSegment.empty()
