@@ -8,4 +8,4 @@ Pillow
 python-dotenv
 scipy
 pydub
-TTS==0.18.1
+TTS
