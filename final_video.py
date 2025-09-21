@@ -52,23 +52,25 @@ def calc_duration(quote_text):
     read_time = len(quote_text) / READING_SPEED
     return BASE_TIME + read_time + PAUSE_TIME
 
+
 def render_word_pillow(word, fontsize, font, color):
-    # Load TTF font (ensure the .ttf file exists on system, e.g. "DejaVuSans-Bold.ttf")
-    font_obj = ImageFont.truetype(font + ".ttf", fontsize)
-
-    # Measure text size
-    dummy_img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+    font_obj = ImageFont.truetype(font, fontsize)
+    dummy_img = Image.new("RGB", (10, 10))
     draw = ImageDraw.Draw(dummy_img)
-    w, h = draw.textsize(word, font=font_obj)
 
-    # Render the word into an image
+    # Use textbbox instead of textsize
+    bbox = draw.textbbox((0, 0), word, font=font_obj)
+    w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+    # Render actual word
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     draw.text((0, 0), word, font=font_obj, fill=color)
 
-    # Convert to ImageClip so rest of your code works unchanged
-    clip = ImageClip(np.array(img))
-    return clip, w, h
+    # Convert Pillow image -> numpy array for ImageClip
+    np_img = np.array(img)
+
+    return ImageClip(np_img).set_duration(0), w, h
 
 def typewriter_static_layout_clip(full_text, total_duration,
                                   font="Georgia", fontsize=70,
