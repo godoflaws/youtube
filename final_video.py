@@ -67,7 +67,7 @@ def typewriter_static_layout_clip(full_text, total_duration,
     # 1. Measure each word
     rendered_words = []
     for word in words:
-        clip = TextClip(word, fontsize=fontsize, font=font, color=color)
+        clip = TextClip(word, fontsize=fontsize, font=font, color=color, method="caption")
         rendered_words.append((word, clip.w, clip.h, clip))
 
     # 2. Word wrapping manually
