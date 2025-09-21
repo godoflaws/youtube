@@ -73,7 +73,7 @@ def render_word_pillow(word, fontsize, font, color):
     return ImageClip(np_img).set_duration(0), w, h
 
 def typewriter_static_layout_clip(full_text, total_duration,
-                                  font="Georgia", fontsize=70,
+                                  font="Georgia.ttf", fontsize=70,
                                   color="white", max_width=1000,
                                   box_color=(0, 0, 0), box_opacity=0.6,
                                   video_size=(1080, 1920)):
