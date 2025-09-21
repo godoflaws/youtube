@@ -27,7 +27,7 @@ if not hasattr(Image, 'ANTIALIAS'):
 
 os.makedirs(VIDEO_DIR, exist_ok=True)
 
-def synthesize_to_tempfile(text: str, speaker: str = None, suffix=".mp3") -> str:
+def synthesize_to_tempfile(tts: TTS, text: str, speaker: str = None, suffix=".mp3") -> str:
     """Generate TTS audio for text and return a temp file path."""
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp.close()
@@ -151,7 +151,7 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
         combined_text = f"“{quote}”\n\n— {author}"
 
         # Generate TTS audio using Coqui
-        mp3_path = synthesize_to_tempfile(quote, speaker=random_voice)
+        mp3_path = synthesize_to_tempfile(tts, quote, speaker=random_voice)
         
         # Load into pydub and append
         audio = AudioSegment.from_file(mp3_path, format="mp3")
