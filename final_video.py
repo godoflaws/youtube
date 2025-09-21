@@ -27,12 +27,13 @@ if not hasattr(Image, 'ANTIALIAS'):
 
 os.makedirs(VIDEO_DIR, exist_ok=True)
 
-def synthesize_to_tempfile(text: str, speaker: str = None) -> str:
-    """Generate TTS audio for text and return a temp .wav file path."""
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+def synthesize_to_tempfile(text: str, speaker: str = None, suffix=".mp3") -> str:
+    """Generate TTS audio for text and return a temp file path."""
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp.close()
     tts.tts_to_file(text=text, speaker=speaker, file_path=tmp.name)
     return tmp.name
+
 
 def calc_duration(quote_text):
     """Calculate duration based on text length + base + pause."""
@@ -129,10 +130,11 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
     with open(quotes_path, "r", encoding="utf-8") as f:
         quotes = json.load(f)
 
-    # Load available voices (list of speaker names)
+    # Load English voices
     with open(voices_path, "r", encoding="utf-8") as f:
-        voices = json.load(f)
+        voices = json.load(f)["english"]
     random_voice = random.choice(voices)
+    tts = TTS(model_name=random_voice)
 
     pause = AudioSegment.silent(duration=PAUSE_TIME * 1000)
     final_audio = AudioSegment.empty()
@@ -149,10 +151,10 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
         combined_text = f"“{quote}”\n\n— {author}"
 
         # Generate TTS audio using Coqui
-        wav_path = synthesize_to_tempfile(quote, random_voice)
-
+        mp3_path = synthesize_to_tempfile(quote, speaker=random_voice)
+        
         # Load into pydub and append
-        audio = AudioSegment.from_file(wav_path, format="wav")
+        audio = AudioSegment.from_file(mp3_path, format="mp3")
         final_audio += audio + pause
 
         txt_with_box = typewriter_static_layout_clip(
