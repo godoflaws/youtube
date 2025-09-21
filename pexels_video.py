@@ -46,6 +46,9 @@ def fetch_and_save_videos():
                 video_response = requests.get(video_url)
                 if video_response.status_code == 200:
                     output_file_name = f"{set_name}.mp4"
+                    # Write the video content to a local file
+                    with open(f"{BCG_VIDEO_DIR}/{set_name}.mp4", "wb") as f:
+                        f.write(video_response.content)
                     # Upload the video bytes to Google Drive
                     file_id = gdrive_utils.upload_bytes_to_drive(
                         filename=output_file_name,
