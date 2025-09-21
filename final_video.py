@@ -27,15 +27,19 @@ if not hasattr(Image, 'ANTIALIAS'):
 
 os.makedirs(VIDEO_DIR, exist_ok=True)
 
-def synthesize_to_tempfile(tts: TTS, text: str, speaker: str, suffix=".mp3") -> str:
-    """Generate TTS audio for text and return a temp file path."""
+def synthesize_to_tempfile(tts: TTS, text: str, speaker: str = None, suffix=".mp3") -> str:
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp.close()
-    
-    # Always pass speaker since we are only using multi-speaker models
-    tts.tts_to_file(text=text, speaker=speaker, file_path=tmp.name)
-    
+    try:
+        if speaker:
+            tts.tts_to_file(text=text, speaker=speaker, file_path=tmp.name)
+        else:
+            tts.tts_to_file(text=text, file_path=tmp.name)
+    except TypeError:
+        # Some models don’t accept speaker param
+        tts.tts_to_file(text=text, file_path=tmp.name)
     return tmp.name
+
 
 
 def calc_duration(quote_text):
