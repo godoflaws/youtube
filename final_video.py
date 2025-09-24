@@ -159,15 +159,10 @@ def create_video_for_set(set_name, quotes_path, audio_path, video_path, output_p
     with open(quotes_path, "r", encoding="utf-8") as f:
         quotes = json.load(f)
 
-    with open("voices.json", "r", encoding="utf-8") as f:
-        voices_data = json.load(f)["english"]
-
-    # Pick model + speaker
-    tts_model_name, speaker_list = random.choice(list(voices_data.items()))
-    speaker_name = random.choice(speaker_list)
-
-    # Load TTS model
+    tts_model_name = "tts_models/en/vctk/vits"
     tts = TTS(model_name=tts_model_name)
+    speakers = list(tts.synthesizer.tts_model.speaker_manager.name_to_id.keys())
+    speaker_name = random.choice(speakers)
 
     pause = AudioSegment.silent(duration=PAUSE_TIME * 1000)
     final_audio = AudioSegment.empty()
