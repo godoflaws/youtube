@@ -55,22 +55,23 @@ def calc_duration(quote_text):
 
 def render_word_pillow(word, fontsize, font, color):
     font_obj = ImageFont.truetype(font, fontsize)
+    ascent, descent = font_obj.getmetrics()
+
     dummy_img = Image.new("RGB", (10, 10))
     draw = ImageDraw.Draw(dummy_img)
-
-    # Use textbbox instead of textsize
     bbox = draw.textbbox((0, 0), word, font=font_obj)
+
     w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
 
-    # Render actual word
+    # Shift text to include full bbox
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    draw.text((0, 0), word, font=font_obj, fill=color)
+    draw.text((-bbox[0], -bbox[1]), word, font=font_obj, fill=color)
 
-    # Convert Pillow image -> numpy array for ImageClip
     np_img = np.array(img)
 
-    return ImageClip(np_img).set_duration(0), w, h
+    return ImageClip(np_img).set_duration(0), w, h, ascent - bbox[1]
+
 
 def typewriter_static_layout_clip(full_text, total_duration,
                                   font="Georgia.ttf", fontsize=70,
@@ -86,56 +87,78 @@ def typewriter_static_layout_clip(full_text, total_duration,
     # Break full text into words
     words = full_text.strip().split()
 
-    # 1. Measure each word
+    # Measure each word with baseline info
     rendered_words = []
-    for word in words:
-        clip, w, h = render_word_pillow(word, fontsize, font, color)
-        rendered_words.append((word, clip.w, clip.h, clip))
+    font_obj = ImageFont.truetype(font, fontsize)
+    ascent, descent = font_obj.getmetrics()
 
-    # 2. Word wrapping manually
+    for word in words:
+        dummy_img = Image.new("RGB", (10, 10))
+        draw = ImageDraw.Draw(dummy_img)
+        bbox = draw.textbbox((0, 0), word, font=font_obj)
+        w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        baseline_offset = ascent - bbox[1]  # distance from top to baseline
+
+        img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        draw.text((-bbox[0], -bbox[1]), word, font=font_obj, fill=color)
+
+        np_img = np.array(img)
+        clip = ImageClip(np_img).set_duration(0)
+        rendered_words.append((word, w, h, clip, baseline_offset))
+
+    # Word wrapping
     lines = []
     current_line = []
     current_width = 0
 
-    for word, w, h, clip in rendered_words:
+    for word, w, h, clip, baseline_offset in rendered_words:
         if current_line and current_width + w + word_spacing > max_width:
             lines.append(current_line)
             current_line = []
             current_width = 0
-        current_line.append((word, w, h, clip))
+        current_line.append((word, w, h, clip, baseline_offset))
         current_width += w + word_spacing
 
     if current_line:
         lines.append(current_line)
 
-    # 3. Compute total text block size
-    line_heights = [max(h for _, _, h, _ in line) for line in lines]
-    total_height = sum(line_heights) + (len(lines) - 1) * line_spacing
-    total_width = max(sum(w for _, w, _, _ in line) + (len(line) - 1) * word_spacing for line in lines)
+    # Compute total block height
+    line_heights = [
+        max(baseline_offset for _, _, _, _, baseline_offset in line)
+        + max(h - baseline_offset for _, _, h, _, baseline_offset in line)
+        for line in lines
+    ]
 
-    # 4. Starting top-left position (to center the text block)
+    total_height = sum(line_heights) + (len(lines) - 1) * line_spacing
+    total_width = max(
+        sum(w for _, w, _, _, _ in line) + (len(line) - 1) * word_spacing
+        for line in lines
+    )
+
+    # Center position
     start_x = (video_size[0] - total_width) // 2
     start_y = (video_size[1] - total_height) // 2
 
-    # 5. Place each word at its final destination
+    # Typewriter effect per word
     word_clips = []
     typing_duration = total_duration * 0.7
     hold_duration = total_duration * 0.3
-    word_index = 0
     word_count = len(rendered_words)
     word_duration = typing_duration / word_count
 
     y = start_y
+    word_index = 0
     for line_idx, line in enumerate(lines):
-        line_height = line_heights[line_idx]
-        line_width = sum(w for _, w, _, _ in line) + (len(line) - 1) * word_spacing
+        baseline = max(baseline_offset for _, _, _, _, baseline_offset in line)
+        line_width = sum(w for _, w, _, _, _ in line) + (len(line) - 1) * word_spacing
         x = (video_size[0] - line_width) // 2
 
-        for word, w, h, clip in line:
+        for word, w, h, clip, baseline_offset in line:
             appear_time = word_index * word_duration
-            fade_duration = min(0.3, word_duration * 0.8)  # Ensure fade duration is shorter than word appearance
+            fade_duration = min(0.3, word_duration * 0.8)
             word_clip = (
-                clip.set_position((x, y))
+                clip.set_position((x, y + baseline - baseline_offset))
                     .set_start(appear_time)
                     .set_duration(total_duration - appear_time)
                     .fadein(fade_duration)
@@ -144,13 +167,20 @@ def typewriter_static_layout_clip(full_text, total_duration,
             x += w + word_spacing
             word_index += 1
 
-        y += line_height + line_spacing
+        y += line_heights[line_idx] + line_spacing
 
-    # 6. Background box
-    box = ColorClip(size=(total_width + margin, total_height + margin), color=box_color)
-    box = box.set_opacity(box_opacity).set_duration(total_duration).set_position("center")
+    # Background box
+    box_width = max_width + margin * 2
+    box_height = total_height + margin * 2
 
-    # 7. Combine everything
+    box = (
+        ColorClip(size=(box_width, box_height), color=box_color)
+        .set_opacity(box_opacity)
+        .set_duration(total_duration)
+        .set_position(("center", "center"))
+    )
+
+    # Combine box and text
     return CompositeVideoClip([box] + word_clips, size=video_size).set_duration(total_duration)
 
 
