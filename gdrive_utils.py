@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+import time
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload, MediaFileUpload
@@ -21,21 +22,35 @@ creds = Credentials(
 drive_service = build("drive", "v3", credentials=creds)
 
 
-def upload_bytes_to_drive(filename: str, file_path: str, folder_id: str, mimetype="application/octet-stream") -> str:
+def upload_bytes_to_drive(filename: str, file_path: str, folder_id: str, mimetype="application/octet-stream", max_retries=5) -> str:
     """
-    Uploads a file to Google Drive using a file path (streamed), avoiding memory issues.
+    Uploads a file to Google Drive using resumable upload with retry logic.
+    Works for both small and large files.
     """
-    media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
     file_metadata = {"name": filename, "parents": [folder_id]}
-    
-    uploaded = drive_service.files().create(
+    media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
+
+    request = drive_service.files().create(
         body=file_metadata,
         media_body=media,
         fields="id"
-    ).execute()
-    
-    print(f"✅ Uploaded {filename} (file id: {uploaded.get('id')})")
-    return uploaded.get("id")
+    )
+
+    for attempt in range(max_retries):
+        try:
+            response = None
+            while response is None:
+                status, response = request.next_chunk()
+                if status:
+                    print(f"⬆️ Uploading {filename}: {int(status.progress() * 100)}%")
+            print(f"✅ Uploaded {filename} (file id: {response.get('id')})")
+            return response.get("id")
+        except Exception as e:
+            print(f"⚠️ Upload failed (attempt {attempt+1}/{max_retries}): {e}")
+            time.sleep(2 ** attempt)  # exponential backoff before retry
+
+    raise RuntimeError(f"❌ Upload failed after {max_retries} attempts for {filename}")
+
 
 
 def list_files(folder_id: str):
