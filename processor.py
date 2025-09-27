@@ -13,10 +13,11 @@ def create_mp4_files():
     fetch_and_save_videos()
     create_final_video()
 
-def process_mp4(file_path):
+def process_mp4(file_to_process):
     random_title = random.choice(youtube_titles)
     random_tags = random.choice(youtube_tags)
     random_description = random.choice(youtube_descriptions)
+    file_path = f"{VIDEO_DIR}/{file_to_process}";
     video_id = upload_video(
         file_path,
         title=random_title,
